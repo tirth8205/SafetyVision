@@ -1,0 +1,45 @@
+# safetyvision/config/safety_thresholds.yaml
+# Safety threshold configurations for nuclear facility monitoring
+
+radiation:
+  safe_level: 0.1        # mSv/h - Normal background
+  warning_level: 0.5     # mSv/h - Enhanced monitoring required
+  danger_level: 1.0      # mSv/h - Immediate action required
+  critical_level: 2.0    # mSv/h - Emergency evacuation
+
+temperature:
+  min_operating: 10      # Celsius - Minimum safe temperature
+  max_operating: 60      # Celsius - Maximum normal operating
+  warning_threshold: 70  # Celsius - Warning level
+  critical_threshold: 80 # Celsius - Critical overheating
+
+gas_levels:
+  hydrogen:
+    warning: 1000        # ppm - Warning threshold
+    critical: 4000       # ppm - Critical threshold
+  methane:
+    warning: 5000        # ppm - Warning threshold
+    critical: 50000      # ppm - Critical threshold
+  carbon_monoxide:
+    warning: 35          # ppm - 8-hour exposure limit
+    critical: 200        # ppm - Immediate danger
+  oxygen:
+    min_safe: 19.5       # % - Minimum safe oxygen level
+    max_safe: 23.5       # % - Maximum safe oxygen level
+
+pressure:
+  min_safe: 95.0         # kPa - Minimum atmospheric pressure
+  max_safe: 106.0        # kPa - Maximum atmospheric pressure
+
+vibration:
+  warning_threshold: 10.0   # mm/s - Structural concern
+  critical_threshold: 25.0  # mm/s - Immediate shutdown required
+
+proximity:
+  minimum_clearance: 1.5    # meters - Minimum safe distance
+  emergency_stop_distance: 0.5  # meters - Emergency stop trigger
+
+response_times:
+  emergency_stop: 0.5       # seconds - Maximum emergency stop time
+  evacuation_alarm: 2.0     # seconds - Maximum alarm activation time
+  human_notification: 5.0   # seconds - Maximum human alert time
