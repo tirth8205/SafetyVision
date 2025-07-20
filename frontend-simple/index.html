@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafetyVision Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.0/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        .danger { border-color: rgba(244, 67, 54, 0.6); }
+        .warning { border-color: rgba(255, 152, 0, 0.6); }
+        .safe { border-color: rgba(76, 175, 80, 0.6); }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .glow {
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.3);
+        }
+        .danger-glow {
+            box-shadow: 0 0 20px rgba(244, 67, 54, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <nav class="bg-black bg-opacity-50 p-4 border-b border-green-500">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-shield-alt text-green-400 text-2xl"></i>
+                <h1 class="text-2xl font-bold text-green-400">SafetyVision</h1>
+                <span class="text-sm text-gray-400">Nuclear Facility Monitoring</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div id="connectionStatus" class="px-3 py-1 rounded text-sm">
+                    <i class="fas fa-wifi"></i> CONNECTING...
+                </div>
+                <div id="emergencyBtn" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded font-bold cursor-pointer">
+                    <i class="fas fa-stop"></i> EMERGENCY STOP
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Emergency Alert Banner -->
+    <div id="emergencyAlert" class="hidden bg-red-600 p-4 text-center animate-pulse">
+        <h2 class="text-xl font-bold">🚨 EMERGENCY ALERT 🚨</h2>
+        <p id="emergencyMessage"></p>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="p-6">
+        <!-- Status Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="card rounded-lg p-4 glow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold">Risk Level</h3>
+                        <p id="riskLevel" class="text-3xl font-bold text-green-400">MINIMAL</p>
+                    </div>
+                    <i id="riskIcon" class="fas fa-shield-alt text-4xl text-green-400"></i>
+                </div>
+            </div>
+
+            <div class="card rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold">Confidence</h3>
+                        <p id="confidence" class="text-3xl font-bold text-blue-400">85%</p>
+                    </div>
+                    <i class="fas fa-brain text-4xl text-blue-400"></i>
+                </div>
+            </div>
+
+            <div class="card rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold">System Status</h3>
+                        <p id="systemStatus" class="text-lg font-bold text-green-400">OPERATIONAL</p>
+                    </div>
+                    <i class="fas fa-cogs text-4xl text-green-400"></i>
+                </div>
+            </div>
+
+            <div class="card rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold">Last Update</h3>
+                        <p id="lastUpdate" class="text-lg font-bold text-gray-400">--:--:--</p>
+                    </div>
+                    <i class="fas fa-clock text-4xl text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sensor Readings and Camera Feed -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Sensor Readings -->
+            <div class="card rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-4">
+                    <i class="fas fa-thermometer-half mr-2"></i>Sensor Readings
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-800 p-3 rounded">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm">Radiation</span>
+                            <span id="radiationStatus" class="px-2 py-1 rounded text-xs bg-green-600">SAFE</span>
+                        </div>
+                        <div class="text-2xl font-bold" id="radiationLevel">0.10 mSv/h</div>
+                        <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                            <div id="radiationBar" class="bg-green-400 h-2 rounded-full" style="width: 10%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 p-3 rounded">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm">Temperature</span>
+                            <span id="tempStatus" class="px-2 py-1 rounded text-xs bg-green-600">NORMAL</span>
+                        </div>
+                        <div class="text-2xl font-bold" id="temperature">25.0°C</div>
+                        <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                            <div id="tempBar" class="bg-green-400 h-2 rounded-full" style="width: 35%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 p-3 rounded">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm">Humidity</span>
+                            <span id="humidityStatus" class="px-2 py-1 rounded text-xs bg-green-600">NORMAL</span>
+                        </div>
+                        <div class="text-2xl font-bold" id="humidity">60%</div>
+                        <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                            <div id="humidityBar" class="bg-green-400 h-2 rounded-full" style="width: 60%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 p-3 rounded">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm">Pressure</span>
+                            <span id="pressureStatus" class="px-2 py-1 rounded text-xs bg-green-600">NORMAL</span>
+                        </div>
+                        <div class="text-2xl font-bold" id="pressure">1013 hPa</div>
+                        <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                            <div id="pressureBar" class="bg-green-400 h-2 rounded-full" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camera Feed -->
+            <div class="card rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-4">
+                    <i class="fas fa-video mr-2"></i>Facility Camera Feed
+                </h3>
+                <div class="relative bg-gray-900 rounded border-2 border-green-500" style="height: 300px;">
+                    <canvas id="cameraCanvas" width="400" height="300" class="w-full h-full rounded"></canvas>
+                    <div class="absolute top-2 left-2 flex space-x-2">
+                        <span class="bg-red-600 px-2 py-1 rounded text-xs pulse">LIVE</span>
+                        <span class="bg-yellow-600 px-2 py-1 rounded text-xs">ZONE-A</span>
+                    </div>
+                    <div class="absolute bottom-2 left-2 text-xs text-gray-400" id="cameraTimestamp"></div>
+                </div>
+                <button id="analyzeBtn" class="mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded w-full">
+                    <i class="fas fa-robot mr-2"></i>Analyze with VLM
+                </button>
+                <div id="analysisResult" class="mt-2 p-3 bg-gray-800 rounded hidden">
+                    <p class="text-sm"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Safety Metrics Chart -->
+        <div class="card rounded-lg p-6 mb-6">
+            <h3 class="text-xl font-bold mb-4">
+                <i class="fas fa-chart-line mr-2"></i>Safety Metrics Trend
+            </h3>
+            <canvas id="safetyChart" width="400" height="200"></canvas>
+        </div>
+
+        <!-- Recent Alerts -->
+        <div class="card rounded-lg p-6">
+            <h3 class="text-xl font-bold mb-4">
+                <i class="fas fa-exclamation-triangle mr-2"></i>Recent Alerts
+            </h3>
+            <div id="alertsList" class="space-y-2">
+                <!-- Alerts will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

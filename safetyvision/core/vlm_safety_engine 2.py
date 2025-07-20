@@ -65,10 +65,9 @@ class VLMSafetyEngine:
         self.config = self._load_config(config_path)
         self.safety_thresholds = self._load_safety_thresholds()
         
-        # Initialize VLM components (disabled due to PyTorch security vulnerability)
-        # TODO: Re-enable when PyTorch 2.6+ is available
-        self.vlm_processor = None  # BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-        self.vlm_model = None  # BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+        # Initialize VLM components
+        self.vlm_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+        self.vlm_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
         
         # Safety prompt templates
         self.safety_prompts = {
@@ -196,22 +195,12 @@ class VLMSafetyEngine:
         """Analyze visual data using VLM for hazard detection"""
         try:
             # Convert to PIL Image for VLM processing
-            from PIL import Image
             image_rgb = cv2.cvtColor(visual_data, cv2.COLOR_BGR2RGB)
-            pil_image = Image.fromarray(image_rgb)
             
-            # Generate visual description using BLIP (disabled due to PyTorch vulnerability)
-            if self.vlm_processor and self.vlm_model:
-                inputs = self.vlm_processor(pil_image, return_tensors="pt")
-                out = self.vlm_model.generate(
-                    pixel_values=inputs.pixel_values,
-                    max_length=100,
-                    num_beams=5,
-                    early_stopping=True
-                )
-                description = self.vlm_processor.decode(out[0], skip_special_tokens=True)
-            else:
-                description = "Visual analysis temporarily disabled (PyTorch security update required)"
+            # Generate visual description using BLIP
+            inputs = self.vlm_processor(image_rgb, return_tensors="pt")
+            out = self.vlm_model.generate(**inputs, max_length=100)
+            description = self.vlm_processor.decode(out[0], skip_special_tokens=True)
             
             # In production, would call GPT-4V or similar VLM here
             # For demo, simulate detailed analysis

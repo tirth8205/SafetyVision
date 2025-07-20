@@ -174,7 +174,7 @@ class SafetyDashboard:
         with camera_tab:
             # Generate simulated camera feed
             demo_image = self.generate_demo_image()
-            st.image(demo_image, caption="Nuclear Facility Camera Feed", use_column_width=True)
+            st.image(demo_image, caption="Nuclear Facility Camera Feed", use_container_width=True)
             
             # VLM analysis overlay
             if st.button("🤖 Analyze with VLM"):
@@ -558,7 +558,8 @@ Potential concerns:
             
             # Randomly adjust risk level for demo
             risk_levels = list(RiskLevel)
-            st.session_state.current_risk_level = np.random.choice(risk_levels[:3])  # Keep it reasonable
+            chosen_risk = np.random.choice(len(risk_levels[:3]))
+            st.session_state.current_risk_level = risk_levels[chosen_risk]  # Keep it reasonable
             
             st.success("✅ Safety analysis complete!")
             st.info(f"Updated risk level: {st.session_state.current_risk_level.name}")
