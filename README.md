@@ -286,7 +286,3 @@ CAMEL Ambassador
 Email: tirthkanani18@gmail.com  
 LinkedIn: [tirthkanani](https://linkedin.com/in/tirthkanani)  
 Portfolio: [tirthkanani.com](https://tirthkanani.com)
-
----
-
-**🔒 Remember: Safety is not just a feature, it's our foundation.**
